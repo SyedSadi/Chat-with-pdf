@@ -162,3 +162,5 @@ checkpoints/
 # documents/
 migrations/
 .env
+
+frontend/node_modules/
