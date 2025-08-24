@@ -3,7 +3,6 @@ import api from '../api'
 import './Auth.css'
 
 const Login = ({ onLogin, onSwitchToRegister }) => {
-  // Form state management
   const [formData, setFormData] = useState({
     name: '',
     password: ''
@@ -16,8 +15,7 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
       ...formData,
       [e.target.name]: e.target.value
     })
-    // Clear any existing error when user starts typing
-    setError('')
+    setError('') // Clear error when user types
   }
 
   const handleSubmit = async (e) => {
