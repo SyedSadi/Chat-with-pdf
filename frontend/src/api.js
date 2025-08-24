@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api/qa/' 
+let API_BASE_URL = 'http://localhost:8000/api/qa/' 
 
 const handleResponse = async (response) => {
   if (!response.ok) {

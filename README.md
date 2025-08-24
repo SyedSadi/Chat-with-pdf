@@ -5,7 +5,7 @@ A modern web application that allows users to upload PDF, DOCX, and TXT document
 ## Features
 
 - 🔐 User authentication (register/login)
-- 📄 Document upload (PDF, DOCX, TXT)
+- 📄 Document upload and management for each user (PDF, DOCX, TXT)
 - 🤖 AI-powered question answering using Google Gemini
 - 💬 Chat interface with message history
 - 🎨 Modern, clean UI design
