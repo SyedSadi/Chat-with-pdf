@@ -267,3 +267,32 @@ class DocumentListView(generics.ListAPIView):
 	def get_queryset(self):
 		return Document.objects.filter(user=self.request.user).order_by('-uploaded_at')
 
+
+class DocumentDeleteView(APIView):
+	permission_classes = [permissions.IsAuthenticated]
+
+	def delete(self, request, document_id):
+		try:
+			document = Document.objects.get(id=document_id, user=request.user)
+			
+			# Delete the FAISS index file if it exists
+			if document.faiss_index_path and os.path.exists(document.faiss_index_path):
+				import shutil
+				try:
+					shutil.rmtree(document.faiss_index_path)
+				except:
+					pass
+			
+			# Delete the uploaded file if it exists
+			if document.file and os.path.exists(document.file.path):
+				os.remove(document.file.path)
+			
+			# Delete the document from database
+			document.delete()
+			
+			return Response({'message': 'Document deleted successfully'}, status=status.HTTP_200_OK)
+		except Document.DoesNotExist:
+			return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+		except Exception as e:
+			return Response({'error': 'Failed to delete document'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

@@ -194,9 +194,14 @@ export const chatAPI = {
   // Delete document
   deleteDocument: async (documentId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${documentId}/`, {
+      const response = await fetch(`${API_BASE_URL}documents/${documentId}/`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('authToken') && { 
+            'Authorization': `Token ${localStorage.getItem('authToken')}`
+          })
+        }
       })
       
       if (response.ok) {

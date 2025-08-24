@@ -15,8 +15,11 @@ const ChatInterface = ({ user, onLogout }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [currentDocument, setCurrentDocument] = useState(null)
   const [uploadedDocuments, setUploadedDocuments] = useState([])
+  const [showDocumentManager, setShowDocumentManager] = useState(false)
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false)
   const messagesEndRef = useRef(null)
   const fileInputRef = useRef(null)
+  const dropdownRef = useRef(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -30,6 +33,94 @@ const ChatInterface = ({ user, onLogout }) => {
     // Load chat history when component mounts
     loadChatHistory()
   }, [])
+
+  useEffect(() => {
+    // Handle click outside to close dropdown
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDocumentManager(false)
+      }
+    }
+
+    if (showDocumentManager) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDocumentManager])
+
+  const loadDocuments = async () => {
+    setIsLoadingDocuments(true)
+    try {
+      const documents = await api.chat.getDocuments()
+      setUploadedDocuments(documents)
+    } catch (error) {
+      console.error('Failed to load documents:', error)
+    } finally {
+      setIsLoadingDocuments(false)
+    }
+  }
+
+  const handleDeleteDocument = async (documentId) => {
+    if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      try {
+        await api.chat.deleteDocument(documentId)
+        
+        // Remove from uploaded documents list
+        setUploadedDocuments(prev => prev.filter(doc => doc.id !== documentId))
+        
+        // If this was the current document, clear it
+        if (currentDocument && currentDocument.id === documentId) {
+          setCurrentDocument(null)
+        }
+        
+        // Reload chat history to reflect changes
+        await loadChatHistory()
+        
+        // Show success message
+        const successMessage = {
+          id: Date.now(),
+          type: 'bot',
+          content: '🗑️ Document deleted successfully!',
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, successMessage])
+        
+      } catch (error) {
+        console.error('Failed to delete document:', error)
+        
+        const errorMessage = {
+          id: Date.now(),
+          type: 'bot',
+          content: `❌ Failed to delete document: ${error.message}`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorMessage])
+      }
+    }
+  }
+
+  const handleShowDocumentManager = async () => {
+    setShowDocumentManager(!showDocumentManager)
+    if (!showDocumentManager) {
+      await loadDocuments()
+    }
+  }
+
+  const handleSelectDocument = (document) => {
+    setCurrentDocument(document)
+    setShowDocumentManager(false)
+    
+    const selectMessage = {
+      id: Date.now(),
+      type: 'bot',
+      content: `📄 Switched to document: "${document.filename}". You can now ask questions about it.`,
+      timestamp: new Date()
+    }
+    setMessages(prev => [...prev, selectMessage])
+  }
 
   const loadChatHistory = async () => {
     try {
@@ -200,7 +291,59 @@ const ChatInterface = ({ user, onLogout }) => {
           <h1 className="brand-name">QNA</h1>
         </div>
         <div className="header-right">
-          <span className="user-name">Welcome, {user.name}</span>
+          <div className="user-dropdown" ref={dropdownRef}>
+            <button 
+              className="user-name-button" 
+              onClick={handleShowDocumentManager}
+            >
+              Welcome, {user.name} ▼
+            </button>
+            {showDocumentManager && (
+              <div className="document-manager-dropdown">
+                <div className="dropdown-header">
+                  <h3>Your Documents</h3>
+                  <div className="current-doc">
+                    {currentDocument ? (
+                      <span>📄 Current: {currentDocument.filename}</span>
+                    ) : (
+                      <span>No document selected</span>
+                    )}
+                  </div>
+                </div>
+                <div className="document-list">
+                  {isLoadingDocuments ? (
+                    <div className="loading">Loading documents...</div>
+                  ) : uploadedDocuments.length === 0 ? (
+                    <div className="no-documents">No documents uploaded yet</div>
+                  ) : (
+                    uploadedDocuments.map(doc => (
+                      <div key={doc.id} className="document-item">
+                        <div className="document-info">
+                          <div 
+                            className="document-name" 
+                            onClick={() => handleSelectDocument(doc)}
+                            title="Click to select this document"
+                          >
+                            📄 {doc.filename}
+                          </div>
+                          <div className="document-date">
+                            {new Date(doc.uploaded_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <button 
+                          className="delete-button"
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          title="Delete document"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <button className="logout-button" onClick={handleLogout}>
             Logout
           </button>
