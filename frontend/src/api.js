@@ -1,17 +1,12 @@
-// api.js - API service for frontend-backend communication
-
 const API_BASE_URL = 'http://localhost:8000/api/qa/' 
 
-// Helper function to handle API responses
 const handleResponse = async (response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Network error' }))
     
-    // Provide user-friendly error messages
     if (response.status === 401) {
       throw new Error('Invalid username or password')
     } else if (response.status === 400) {
-      // Use the backend error message if available, otherwise provide a friendly message
       throw new Error(error.error || error.message || 'Invalid request')
     } else if (response.status >= 500) {
       throw new Error('Server error. Please try again later.')
@@ -22,34 +17,30 @@ const handleResponse = async (response) => {
   return response.json()
 }
 
-// Helper function to get auth headers
 const getAuthHeaders = () => {
   const token = localStorage.getItem('authToken')
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Token ${token}` })  // Changed from Bearer to Token
+    ...(token && { 'Authorization': `Token ${token}` })
   }
 }
 
-// Authentication API calls
 export const authAPI = {
-  // Login user
   login: async (credentials) => {
     try {
-      const response = await fetch(`${API_BASE_URL}login/`, {  // Removed /auth/
+      const response = await fetch(`${API_BASE_URL}login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: credentials.name || credentials.username,  // Support both field names
+          username: credentials.name || credentials.username,
           password: credentials.password
         })
       })
       
       const data = await handleResponse(response)
       
-      // Store auth token if provided
       if (data.token) {
         localStorage.setItem('authToken', data.token)
       }
@@ -57,7 +48,6 @@ export const authAPI = {
       return data
     } catch (error) {
       console.error('Login error:', error)
-      // Provide user-friendly error message
       if (error.message.includes('401') || error.message.includes('Invalid credentials')) {
         throw new Error('Invalid username or password')
       }
@@ -65,23 +55,21 @@ export const authAPI = {
     }
   },
 
-  // Register user
   register: async (userData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}register/`, {  // Removed /auth/
+      const response = await fetch(`${API_BASE_URL}register/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: userData.name || userData.username,  // Support both field names
+          username: userData.name || userData.username,
           password: userData.password
         })
       })
       
       const data = await handleResponse(response)
       
-      // Store auth token if provided
       if (data.token) {
         localStorage.setItem('authToken', data.token)
       }
@@ -89,7 +77,6 @@ export const authAPI = {
       return data
     } catch (error) {
       console.error('Registration error:', error)
-      // Provide user-friendly error messages for registration
       if (error.message.includes('Username already exists')) {
         throw new Error('Username already exists. Please choose a different username.')
       } else if (error.message.includes('Username and password required')) {
@@ -99,14 +86,11 @@ export const authAPI = {
     }
   },
 
-  // Logout user
   logout: async () => {
     try {
-      // Since you don't have a logout endpoint, just clear local storage
       localStorage.removeItem('authToken')
       return { message: 'Logged out successfully' }
     } catch (error) {
-      // Still clear local storage even if API call fails
       localStorage.removeItem('authToken')
       console.error('Logout error:', error)
       return { message: 'Logged out successfully' }
@@ -114,9 +98,7 @@ export const authAPI = {
   }
 }
 
-// Chat API calls
 export const chatAPI = {
-  // Send message and get response
   sendMessage: async (message, documentId = null) => {
     try {
       const requestData = {
@@ -145,10 +127,9 @@ export const chatAPI = {
     }
   },
 
-  // Get chat history
   getChatHistory: async () => {
     try {
-      console.log('Making getChatHistory request...') // Debug log
+      console.log('Making getChatHistory request...')
       const response = await fetch(`${API_BASE_URL}history/`, {
         method: 'GET',
         headers: {
@@ -159,9 +140,9 @@ export const chatAPI = {
         }
       })
       
-      console.log('getChatHistory response status:', response.status) // Debug log
+      console.log('getChatHistory response status:', response.status)
       const data = await handleResponse(response)
-      console.log('getChatHistory data:', data) // Debug log
+      console.log('getChatHistory data:', data)
       return data
     } catch (error) {
       console.error('Get chat history error:', error)
@@ -169,17 +150,16 @@ export const chatAPI = {
     }
   },
 
-  // Upload document
   uploadDocument: async (file) => {
     try {
       const formData = new FormData()
-      formData.append('file', file)  // Changed from 'document' to 'file' to match Django
+      formData.append('file', file)
 
-      const response = await fetch(`${API_BASE_URL}upload/`, {  // Changed to match Django URL
+      const response = await fetch(`${API_BASE_URL}upload/`, {
         method: 'POST',
         headers: {
           ...(localStorage.getItem('authToken') && { 
-            'Authorization': `Token ${localStorage.getItem('authToken')}`  // Changed from Bearer to Token
+            'Authorization': `Token ${localStorage.getItem('authToken')}`
           })
         },
         body: formData
@@ -192,10 +172,9 @@ export const chatAPI = {
     }
   },
 
-  // Get uploaded documents
   getDocuments: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}documents/`, {  // Fixed URL
+      const response = await fetch(`${API_BASE_URL}documents/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

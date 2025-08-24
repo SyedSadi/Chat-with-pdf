@@ -1,41 +1,36 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-# Extend user model for future profile info
 class UserProfile(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
-	# Add more fields as needed (e.g., avatar, bio)
 	def __str__(self):
 		return self.user.username
-from django.db import models
 
 class Document(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)  # Made optional temporarily
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)
 	file = models.FileField(upload_to='documents/')
-	# name field removed
 	uploaded_at = models.DateTimeField(auto_now_add=True)
-	text_content = models.TextField(blank=True, null=True)  # Extracted text from file
-	faiss_index_path = models.CharField(max_length=255, blank=True, null=True)  # Path to FAISS index file
-	chunks = models.JSONField(blank=True, null=True)  # List of text chunks
+	text_content = models.TextField(blank=True, null=True)
+	faiss_index_path = models.CharField(max_length=255, blank=True, null=True)
+	chunks = models.JSONField(blank=True, null=True)
 
 	def __str__(self):
 		return self.file.name
 
 class ChatHistory(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
-	document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='chats', null=True, blank=True)  # Made optional
+	document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='chats', null=True, blank=True)
 	question = models.TextField()
 	answer = models.TextField()
-	created_at = models.DateTimeField(auto_now_add=True, db_index=True)  # Added index for performance
+	created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
 	class Meta:
-		ordering = ['-created_at']  # Default ordering
+		ordering = ['-created_at']
 		indexes = [
-			models.Index(fields=['user', '-created_at']),  # Compound index for user queries
-			models.Index(fields=['document', '-created_at']),  # Compound index for document queries
+			models.Index(fields=['user', '-created_at']),
+			models.Index(fields=['document', '-created_at']),
 		]
 
 	def __str__(self):
 		return f"Q: {self.question[:50]}..."
 
-# Create your models here.

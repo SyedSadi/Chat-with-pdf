@@ -1,108 +1,97 @@
 # QNA - Chat with PDF
 
-A full-stack web application built with Django and React that enables users to upload documents (PDF, DOCX, TXT) and interact with them through AI-powered Q&A. The application uses LangChain and Google Gemini for intelligent document processing and question answering.
+A modern web application that allows users to upload PDF, DOCX, and TXT documents and ask questions about their content using AI-powered question answering.
 
-## 🚀 Features
+## Features
 
-- **User Authentication**: Secure registration and login system with token-based auth
-- **Document Processing**: Upload and parse PDF, DOCX, and TXT files
-- **AI-Powered Q&A**: Chat interface using Google Gemini LLM
-- **Vector Search**: FAISS integration for semantic document search
-- **Chat History**: Persistent conversation history per user
-- **Modern UI**: Responsive React frontend with clean design
-- **Real-time Chat**: Interactive chat interface with typing indicators
+- 🔐 User authentication (register/login)
+- 📄 Document upload (PDF, DOCX, TXT)
+- 🤖 AI-powered question answering using Google Gemini
+- 💬 Chat interface with message history
+- 🎨 Modern, clean UI design
+- 🔍 Vector search using FAISS for accurate document retrieval
 
-## 🛠 Technology Stack
+## Tech Stack
 
-**Backend:**
+### Backend
 
-- Django 5.2.5 + Django REST Framework
-- LangChain for document processing and AI workflows
-- Google Gemini AI for natural language processing
-- FAISS for vector similarity search
+- Django with Django REST Framework
+- LangChain for document processing and AI integration
+- Google Gemini AI for question answering
+- FAISS for vector search
 - PostgreSQL for data persistence
 - Token-based authentication
 
-**Frontend:**
+### Frontend
 
-- React 19 with modern hooks
-- Vite for fast development and building
-- Custom CSS with design system approach
-- Responsive design for mobile/desktop
+- React with Vite
+- Modern CSS with custom design system
+- Responsive design for all devices
 
-## ⚙️ Installation & Setup
+## Setup Instructions
 
 ### Prerequisites
-
-Make sure you have these installed:
 
 - Python 3.11+
 - Node.js 18+
 - PostgreSQL
-- Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
+- Google Gemini API key
 
 ### Backend Setup
 
-1. **Navigate to backend directory**
+1. **Clone and navigate to the project**
 
    ```bash
    cd Chat-with-pdf/ai_chat
    ```
 
-2. **Create and activate virtual environment**
+2. **Create virtual environment**
 
    ```bash
    python -m venv myenv
-   source myenv/bin/activate  # On macOS/Linux
-   # OR
-   myenv\Scripts\activate     # On Windows
+   source myenv/bin/activate  # mac
+   myenv\Scripts\activate    # On Windows:
    ```
 
-3. **Install Python dependencies**
+3. **Install dependencies**
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Install dependencies**
+## Environment Variables
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+Create a `.env` file in the `ai_chat` directory with:
 
-5. **Environment Configuration**
+```env
+# Django Configuration
+DJANGO_SECRET_KEY=your-secret-key-here
+DEBUG=True
 
-   Create a `.env` file in the `ai_chat` directory:
+# Database Configuration
+POSTGRES_DB=qna_db
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
 
-   ```env
-   # Django Settings
-   DJANGO_SECRET_KEY=your-secret-key-here
-   DEBUG=True
+# AI Configuration
+GEMINI_API_KEY=your-gemini-api-key-here
+```
 
-   # Database Configuration
-   POSTGRES_DB=qna_db
-   POSTGRES_USER=your_db_user
-   POSTGRES_PASSWORD=your_db_password
-   POSTGRES_HOST=localhost
-   POSTGRES_PORT=5432
+5.**Database setup**
 
-   # AI Configuration
-   GEMINI_API_KEY=your-gemini-api-key-here
-   ```
+```bash
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser  # Optional
+```
 
-6. **Database Setup**
+6.**Run backend server**
 
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   python manage.py createsuperuser  # Optional: create admin user
-   ```
-
-7. **Start Django server**
-   ```bash
-   python manage.py runserver
-   ```
-   Backend will be available at: `http://localhost:8000`
+```bash
+python manage.py runserver
+```
 
 ### Frontend Setup
 
@@ -112,60 +101,35 @@ Make sure you have these installed:
    cd ../frontend
    ```
 
-2. **Install Node.js dependencies**
+2. **Install dependencies**
 
    ```bash
    npm install
    ```
 
-3. **Start development server**
+3. **Run development server**
+
    ```bash
    npm run dev
    ```
-   Frontend will be available at: `http://localhost:5173`
 
-## 🔌 API Reference
+4. **Access the application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:8000
 
-| Endpoint             | Method | Description                   |
-| -------------------- | ------ | ----------------------------- |
-| `/api/qa/register/`  | POST   | User registration             |
-| `/api/qa/login/`     | POST   | User authentication           |
-| `/api/qa/upload/`    | POST   | Document upload               |
-| `/api/qa/qa/`        | POST   | Ask questions about documents |
-| `/api/qa/history/`   | GET    | Retrieve chat history         |
-| `/api/qa/documents/` | GET    | List user's documents         |
+## API Endpoints
 
-## 🛡️ Security Features
+- `POST /api/qa/register/` - User registration
+- `POST /api/qa/login/` - User login
+- `POST /api/qa/upload/` - Document upload
+- `POST /api/qa/qa/` - Ask questions
+- `GET /api/qa/history/` - Chat history
+- `GET /api/qa/documents/` - User documents
 
-- **Authentication**: Token-based authentication with Django REST framework
-- **File Validation**: Strict file type and size validation (10MB limit)
-- **User Isolation**: All documents and chats are user-specific
-- **CORS Protection**: Configured for frontend-backend communication
-- **SQL Injection Prevention**: Django ORM provides built-in protection
-- **Input Sanitization**: All user inputs are validated and sanitized
+## Security Features
 
-## 📁 Project Structure
-
-```
-Chat-with-pdf/
-├── ai_chat/                 # Django Backend
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── ai_chat/            # Main Django app
-│   │   ├── settings.py
-│   │   ├── urls.py
-│   │   └── ...
-│   └── qa/                 # QA functionality app
-│       ├── models.py
-│       ├── views.py
-│       ├── serializers.py
-│       └── ...
-├── frontend/               # React Frontend
-│   ├── src/
-│   │   ├── components/
-│   │   ├── App.jsx
-│   │   └── ...
-│   ├── package.json
-│   └── vite.config.js
-└── README.md
-```
+- Token-based authentication
+- File type and size validation
+- User-specific data isolation
+- CORS protection
+- SQL injection protection via Django ORM

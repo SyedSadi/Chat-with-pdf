@@ -3,7 +3,7 @@ from .models import Document, ChatHistory
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    filename = serializers.SerializerMethodField()  # Add filename field
+    filename = serializers.SerializerMethodField()
     
     class Meta:
         model = Document
@@ -18,7 +18,6 @@ class ChatHistorySerializer(serializers.ModelSerializer):
         model = ChatHistory
         fields = ['id', 'user', 'document', 'question', 'answer', 'created_at']
 
-# For Q&A requests
 class QARequestSerializer(serializers.Serializer):
     document_id = serializers.IntegerField(required=False, allow_null=True)
     question = serializers.CharField()

@@ -34,7 +34,6 @@ const ChatInterface = ({ user, onLogout }) => {
   const loadChatHistory = async () => {
     try {
       const history = await api.chat.getChatHistory()
-      console.log('Loaded chat history:', history) // Debug log
       
       if (history && history.length > 0) {
         const formattedHistory = history.map(item => ([
@@ -52,7 +51,6 @@ const ChatInterface = ({ user, onLogout }) => {
           }
         ])).flat()
         
-        // Keep welcome message and add history, but avoid replacing all messages during upload
         const welcomeMessage = {
           id: 1,
           type: 'bot',
@@ -60,17 +58,12 @@ const ChatInterface = ({ user, onLogout }) => {
           timestamp: new Date()
         }
         
-        // Only update if we don't have messages already (initial load) or if we have new history
         setMessages(prev => {
-          // If this is initial load (only welcome message) or history is significantly different
           if (prev.length <= 1 || formattedHistory.length !== prev.length - 1) {
             return [welcomeMessage, ...formattedHistory]
           }
-          return prev // Don't update if history hasn't changed
+          return prev
         })
-        console.log('Messages updated with history') // Debug log
-      } else {
-        console.log('No chat history found') // Debug log
       }
     } catch (error) {
       console.error('Failed to load chat history:', error)
@@ -81,10 +74,7 @@ const ChatInterface = ({ user, onLogout }) => {
     e.preventDefault()
     if (!inputValue.trim()) return
 
-    console.log('Current document state:', currentDocument) // Debug log
-
     if (!currentDocument) {
-      console.log('No current document, showing error') // Debug log
       const errorMessage = {
         id: Date.now(),
         type: 'bot',
@@ -108,9 +98,7 @@ const ChatInterface = ({ user, onLogout }) => {
     setIsLoading(true)
 
     try {
-      console.log('Sending message with document ID:', currentDocument.id) // Debug log
       const response = await api.chat.sendMessage(question, currentDocument.id)
-      console.log('Received response:', response) // Debug log
       
       const botMessage = {
         id: Date.now() + 1,
@@ -120,13 +108,12 @@ const ChatInterface = ({ user, onLogout }) => {
       }
       setMessages(prev => [...prev, botMessage])
       
-      // Reload chat history to make sure it's saved
       setTimeout(async () => {
         await loadChatHistory()
       }, 1000)
       
     } catch (error) {
-      console.error('Send message error:', error) // Debug log
+      console.error('Send message error:', error)
       const errorMessage = {
         id: Date.now() + 1,
         type: 'bot',
@@ -140,11 +127,9 @@ const ChatInterface = ({ user, onLogout }) => {
   }
 
   const handleFileUpload = async (e) => {
-    e.preventDefault() // Prevent any form submission
+    e.preventDefault()
     const file = e.target.files[0]
     if (file) {
-      console.log('Starting file upload:', file.name) // Debug log
-      
       const uploadMessage = {
         id: Date.now(),
         type: 'user',
@@ -156,15 +141,10 @@ const ChatInterface = ({ user, onLogout }) => {
       
       try {
         const response = await api.chat.uploadDocument(file)
-        console.log('Upload response:', response) // Debug log
         
-        // Set the uploaded document as current document
         setCurrentDocument(response)
         setUploadedDocuments(prev => [...prev, response])
         
-        console.log('Document uploaded and set as current:', response) // Debug log
-        
-        // Show success message immediately
         const successMessage = {
           id: Date.now() + 1,
           type: 'bot',
@@ -172,19 +152,17 @@ const ChatInterface = ({ user, onLogout }) => {
           timestamp: new Date()
         }
         
-        // Replace upload message with success message
         setMessages(prev => [
           ...prev.filter(msg => msg.id !== uploadMessage.id),
           successMessage
         ])
         
-        // Wait a moment and then reload chat history to get the backend saved message
         setTimeout(async () => {
           await loadChatHistory()
-        }, 1000) // Give backend time to save
+        }, 1000)
         
       } catch (error) {
-        console.error('Upload error:', error) // Debug log
+        console.error('Upload error:', error)
         const errorMessage = {
           id: Date.now() + 1,
           type: 'bot',
@@ -193,7 +171,6 @@ const ChatInterface = ({ user, onLogout }) => {
         }
         setMessages(prev => [...prev.filter(msg => msg.id !== uploadMessage.id), errorMessage])
       } finally {
-        // Clear the file input to prevent re-submission and page refresh
         if (fileInputRef.current) {
           fileInputRef.current.value = ''
         }
