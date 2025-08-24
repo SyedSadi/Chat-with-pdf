@@ -24,7 +24,7 @@ class RegisterUserView(APIView):
 	permission_classes = [permissions.AllowAny]
 
 	def post(self, request):
-		username = request.data.get('username')
+		username = request.data.get('username') or request.data.get('name')  # Support both fields
 		password = request.data.get('password')
 		if not username or not password:
 			return Response({'error': 'Username and password required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -32,7 +32,7 @@ class RegisterUserView(APIView):
 			return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 		user = User.objects.create_user(username=username, password=password)
 		token, _ = Token.objects.get_or_create(user=user)
-		return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+		return Response({'token': token.key, 'user': {'name': user.username}}, status=status.HTTP_201_CREATED)
 
 
 
@@ -41,12 +41,12 @@ class LoginUserView(APIView):
 	permission_classes = [permissions.AllowAny]
 
 	def post(self, request):
-		username = request.data.get('username')
+		username = request.data.get('username') or request.data.get('name')  # Support both fields
 		password = request.data.get('password')
 		user = authenticate(username=username, password=password)
 		if user:
 			token, _ = Token.objects.get_or_create(user=user)
-			return Response({'token': token.key}, status=status.HTTP_200_OK)
+			return Response({'token': token.key, 'user': {'name': user.username}}, status=status.HTTP_200_OK)
 		return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 # List chat history for a user
@@ -62,7 +62,7 @@ class ChatHistoryListView(generics.ListAPIView):
 		queryset = ChatHistory.objects.filter(user=user)
 		if document_id:
 			queryset = queryset.filter(document_id=document_id)
-		return queryset.order_by('-created_at')
+		return queryset.order_by('created_at')  # Changed to chronological order
 
 
 
@@ -86,62 +86,66 @@ class QAView(APIView):
 			question = serializer.validated_data['question']
 			history_text = ""
 			document = None
+			
 			if doc_id:
 				try:
-					document = Document.objects.get(id=doc_id)
+					document = Document.objects.get(id=doc_id, user=request.user)  # Added user filter for security
 				except Document.DoesNotExist:
-					document = None
-				if document:
-					# Load FAISS vectorstore
-					api_key = os.getenv("GEMINI_API_KEY")
-					embeddings = GoogleGenerativeAIEmbeddings(
-						google_api_key=api_key,
-						model="models/embedding-001"
-					)
-					vectorstore = FAISS.load_local(
-						document.faiss_index_path,
-						embeddings,
-						allow_dangerous_deserialization=True
-					)
-					retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
-					# Get top chunks
-					context_chunks = retriever.invoke(question)
-					context = "\n---\n".join([chunk.page_content for chunk in context_chunks])
-					# Get recent chat history
-					max_history = 5
-					recent_history = ChatHistory.objects.filter(document_id=doc_id).order_by('-created_at')[:max_history]
-					for chat in reversed(recent_history):
-						history_text += f"Q: {chat.question}\nA: {chat.answer}\n"
-					# Build prompt
-					prompt = (
-						"You are an expert Q&A assistant. Only answer questions using the provided Document Context below. "
-						"If the answer is not present in the context, reply: 'Sorry, this information is not found in the uploaded document. Please upload a relevant text document.' "
-						"Do not use any outside knowledge.\n"
-						f"Document Context:\n{context}\n\nChat History:\n{history_text}\n\nCurrent Question: {question}\n\nAnswer:"
-					)
-					# Use Gemini LLM via LangChain
-					llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
-					response = llm.invoke(prompt)
-					# Extract answer text if response is a list of tuples
-					if isinstance(response, list):
-						# Try to find the tuple with key 'content'
-						answer = None
-						for item in response:
-							if isinstance(item, (list, tuple)) and item[0] == "content":
-								answer = item[1]
-								break
-						if answer is None:
-							answer = str(response)
-					elif hasattr(response, 'content'):
-						answer = response.content
-					elif isinstance(response, str) and response.startswith("content="):
-						# Extract text after 'content=' and before any other key
-						answer = response.split("content=")[1].split("additional_kwargs")[0].strip().strip('"')
-					else:
-						answer = str(response)
-					# Save chat history only if document exists
-					ChatHistory.objects.create(user=request.user, document=document, question=question, answer=answer)
-					return Response({'answer': answer}, status=status.HTTP_200_OK)
+					return Response({'error': 'Document not found'}, status=status.HTTP_404_NOT_FOUND)
+				
+				# Load FAISS vectorstore
+				api_key = os.getenv("GEMINI_API_KEY")
+				embeddings = GoogleGenerativeAIEmbeddings(
+					google_api_key=api_key,
+					model="models/embedding-001"
+				)
+				vectorstore = FAISS.load_local(
+					document.faiss_index_path,
+					embeddings,
+					allow_dangerous_deserialization=True
+				)
+				retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+				# Get top chunks
+				context_chunks = retriever.invoke(question)
+				context = "\n---\n".join([chunk.page_content for chunk in context_chunks])
+				# Get recent chat history
+				max_history = 5
+				recent_history = ChatHistory.objects.filter(document_id=doc_id, user=request.user).order_by('-created_at')[:max_history]
+				for chat in reversed(recent_history):
+					history_text += f"Q: {chat.question}\nA: {chat.answer}\n"
+				# Build prompt
+				prompt = (
+					"You are an expert Q&A assistant. Only answer questions using the provided Document Context below. "
+					"If the answer is not present in the context, reply: 'Sorry, this information is not found in the uploaded document. Please upload a relevant text document.' "
+					"Do not use any outside knowledge.\n"
+					f"Document Context:\n{context}\n\nChat History:\n{history_text}\n\nCurrent Question: {question}\n\nAnswer:"
+				)
+			else:
+				# No document provided, give general response
+				prompt = (
+					"You are a helpful assistant. The user hasn't uploaded any document yet. "
+					"Please ask them to upload a document first so you can answer questions about it. "
+					f"User question: {question}\n\nAnswer:"
+				)
+			
+			# Use Gemini LLM via LangChain
+			llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=os.getenv("GEMINI_API_KEY"))
+			response = llm.invoke(prompt)
+			
+			# Extract only the content from the response
+			if hasattr(response, 'content'):
+				answer = response.content
+			else:
+				answer = str(response)
+			
+			# Save chat history regardless of document existence
+			ChatHistory.objects.create(
+				user=request.user, 
+				document=document,  # Will be None if no document
+				question=question, 
+				answer=answer
+			)
+			return Response({'answer': answer}, status=status.HTTP_200_OK)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -215,12 +219,47 @@ class DocumentUploadView(APIView):
 		except RuntimeError:
 			asyncio.set_event_loop(asyncio.new_event_loop())
 		
+		# Validate file
+		file_obj = request.FILES.get('file')
+		if not file_obj:
+			return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+		
+		filename = file_obj.name
+		file_ext = os.path.splitext(filename)[1].lower()
+		
+		# Check file extension
+		from django.conf import settings
+		allowed_extensions = getattr(settings, 'ALLOWED_UPLOAD_EXTENSIONS', ['.pdf', '.docx', '.txt'])
+		if file_ext not in allowed_extensions:
+			return Response({
+				'error': f'File type {file_ext} not allowed. Allowed types: {", ".join(allowed_extensions)}'
+			}, status=status.HTTP_400_BAD_REQUEST)
+		
+		# Check file size
+		max_size = getattr(settings, 'MAX_UPLOAD_SIZE', 10 * 1024 * 1024)
+		if file_obj.size > max_size:
+			return Response({
+				'error': f'File too large. Maximum size: {max_size // (1024*1024)}MB'
+			}, status=status.HTTP_400_BAD_REQUEST)
+		
 		serializer = DocumentSerializer(data=request.data)
 		if serializer.is_valid():
 			file_obj = request.FILES.get('file')
 			filename = file_obj.name if file_obj else ''
 			text = extract_text_from_file(file_obj, filename)
-			doc = serializer.save(text_content=text)
+			doc = serializer.save(text_content=text, user=request.user)  # Added user
+			
+			# Save upload message to chat history
+			upload_question = f"📎 Uploaded document: {filename}"
+			upload_answer = f"✅ Document \"{filename}\" uploaded successfully! You can now ask questions about it."
+			
+			ChatHistory.objects.create(
+				user=request.user,
+				document=doc,
+				question=upload_question,
+				answer=upload_answer
+			)
+			
 			# LangChain chunking
 			splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 			chunks = splitter.split_text(text)
@@ -241,4 +280,13 @@ class DocumentUploadView(APIView):
 			doc.save()
 			return Response(DocumentSerializer(doc).data, status=status.HTTP_201_CREATED)
 		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DocumentListView(generics.ListAPIView):
+	"""API endpoint to list user's documents."""
+	serializer_class = DocumentSerializer
+	permission_classes = [permissions.IsAuthenticated]
+
+	def get_queryset(self):
+		return Document.objects.filter(user=self.request.user).order_by('-uploaded_at')
 

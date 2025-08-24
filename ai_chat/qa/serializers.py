@@ -3,9 +3,14 @@ from .models import Document, ChatHistory
 
 
 class DocumentSerializer(serializers.ModelSerializer):
+    filename = serializers.SerializerMethodField()  # Add filename field
+    
     class Meta:
         model = Document
-        fields = ['id', 'file', 'uploaded_at', 'text_content']
+        fields = ['id', 'file', 'filename', 'uploaded_at', 'text_content']
+    
+    def get_filename(self, obj):
+        return obj.file.name if obj.file else 'Unknown'
 
 class ChatHistorySerializer(serializers.ModelSerializer):
     document = DocumentSerializer(read_only=True)

@@ -10,6 +10,7 @@ class UserProfile(models.Model):
 from django.db import models
 
 class Document(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='documents', null=True, blank=True)  # Made optional temporarily
 	file = models.FileField(upload_to='documents/')
 	# name field removed
 	uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -22,10 +23,17 @@ class Document(models.Model):
 
 class ChatHistory(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
-	document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='chats')
+	document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name='chats', null=True, blank=True)  # Made optional
 	question = models.TextField()
 	answer = models.TextField()
-	created_at = models.DateTimeField(auto_now_add=True)
+	created_at = models.DateTimeField(auto_now_add=True, db_index=True)  # Added index for performance
+
+	class Meta:
+		ordering = ['-created_at']  # Default ordering
+		indexes = [
+			models.Index(fields=['user', '-created_at']),  # Compound index for user queries
+			models.Index(fields=['document', '-created_at']),  # Compound index for document queries
+		]
 
 	def __str__(self):
 		return f"Q: {self.question[:50]}..."

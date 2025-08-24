@@ -1,0 +1,325 @@
+/* ChatInterface.css - Modern, clean styling */
+
+.chat-container {
+  min-height: 100vh;
+  background: var(--background-color);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.chat-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-left .brand-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.logout-button {
+  padding: 0.5rem 1rem;
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background: var(--error-color);
+  color: white;
+  border-color: var(--error-color);
+}
+
+/* Messages Area */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6rem 1rem 1rem 1rem; /* Added top padding for fixed header */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  scroll-behavior: smooth;
+}
+
+.message {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-message {
+  align-items: flex-end;
+}
+
+.bot-message {
+  align-items: flex-start;
+}
+
+.message-bubble {
+  max-width: 80%;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-lg);
+  position: relative;
+  word-wrap: break-word;
+}
+
+.user-message .message-bubble {
+  background: var(--primary-color);
+  color: white;
+  border-bottom-right-radius: var(--radius-sm);
+  border: none;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+.bot-message .message-bubble {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: var(--radius-sm);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.message-content {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-bottom: 0.375rem;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0.25rem 0;
+  font-weight: 500;
+}
+
+.user-message .message-time {
+  text-align: right;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.bot-message .message-time {
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.typing-indicator span {
+  height: 0.375rem;
+  width: 0.375rem;
+  background: var(--primary-color);
+  border-radius: 50%;
+  animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-0.625rem);
+    opacity: 1;
+  }
+}
+
+/* Input Area */
+.input-container {
+  padding: 1.5rem;
+  background: white;
+  border-top: 1px solid var(--border-color);
+}
+
+.input-form {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.attachment-button {
+  padding: 0.875rem;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  color: var(--text-secondary);
+}
+
+.attachment-button:hover {
+  background: var(--border-color);
+  transform: translateY(-1px);
+}
+
+.message-input {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: 0.9375rem;
+  outline: none;
+  transition: all 0.2s ease;
+  background: var(--background-color);
+  line-height: 1.4;
+}
+
+.message-input:focus {
+  border-color: var(--primary-color);
+  background: white;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+}
+
+.message-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.send-button {
+  padding: 0.875rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.125rem;
+}
+
+.send-button:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Scrollbar Styling */
+.messages-container::-webkit-scrollbar {
+  width: 0.375rem;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: var(--surface-color);
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chat-header {
+    padding: 1rem;
+  }
+  
+  .header-left .brand-name {
+    font-size: 1.25rem;
+  }
+  
+  .user-name {
+    display: none;
+  }
+  
+  .messages-container {
+    padding: 5rem 1rem 1rem 1rem; /* Adjusted for smaller fixed header */
+  }
+  
+  .message-bubble {
+    max-width: 90%;
+  }
+  
+  .input-container {
+    padding: 1rem;
+  }
+  
+  .input-form {
+    gap: 0.5rem;
+  }
+  
+  .attachment-button,
+  .send-button {
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-bubble {
+    max-width: 95%;
+    padding: 0.875rem 1rem;
+  }
+  
+  .message-content {
+    font-size: 0.875rem;
+  }
+}
