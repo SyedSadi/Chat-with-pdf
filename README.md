@@ -32,7 +32,7 @@ A modern web application that allows users to upload PDF, DOCX, and TXT document
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.13.7
 - Node.js 18+
 - PostgreSQL
 - Google Gemini API key
